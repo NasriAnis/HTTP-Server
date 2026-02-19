@@ -1,4 +1,4 @@
-### HTTP Server projet layouty
+### HTTP Server projet layout
 
 ```
 http_server/
