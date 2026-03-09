@@ -1,24 +1,45 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "server.h"
 #include "router.h"
 
-void home_handler(const http_request_t *req, http_response_t *res) {
-    (void)req; // Unused
-    res->status_code = 200;
-    res->status_message = "OK";
+// Helper function to read a file and put it in the response body
+void serve_static_file(const char *filename, http_response_t *res) {
+    char path[256];
+    snprintf(path, sizeof(path), "public/%s", filename);
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        res->status_code = 404;
+        res->status_message = "Not Found";
+        res->body = "File not found";
+        res->body_len = strlen(res->body);
+        return;
+    }
+
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char *content = malloc(fsize + 1);
+    fread(content, 1, fsize, f);
+    fclose(f);
+
+    content[fsize] = 0;
+    res->body = content;
+    res->body_len = fsize;
     res->content_type = "text/html";
-    res->body = "<h1>Welcome to the Home Page!</h1><p>The server is working.</p>";
-    res->body_len = strlen(res->body);
+}
+
+void home_handler(const http_request_t *req, http_response_t *res) {
+    (void)req;
+    serve_static_file("index.html", res);
 }
 
 void about_handler(const http_request_t *req, http_response_t *res) {
     (void)req;
-    res->status_code = 200;
-    res->status_message = "OK";
-    res->content_type = "text/html";
-    res->body = "<h1>About Us</h1><p>This is a custom C HTTP server.</p>";
-    res->body_len = strlen(res->body);
+    serve_static_file("about.html", res);
 }
 
 int main(void)
